@@ -20,7 +20,7 @@ everything here to work out of the box.
   servers thus forcing it to refresh the PSKs stored in the device's external
   storage. Available for 2.19.355, 2.20.200.22 and 2.20.206.22.
 
-* *watls_download.js** - Forces WhatsApp to connect to a TLS v1.3 media download
+* **watls_download.js** - Forces WhatsApp to connect to a TLS v1.3 media download
   server and hooks part of the WaTLS engine, in order to dump TLS secrets to the
   console. Available for 2.19.355 and 2.20.206.22.
 
