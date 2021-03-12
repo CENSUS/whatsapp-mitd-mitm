@@ -86,7 +86,7 @@ main()
     #
     # Start the MitM OpenSSL server.
     #
-    start_server
+    start_server "$1"
 }
 
 
