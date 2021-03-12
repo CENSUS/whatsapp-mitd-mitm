@@ -1,0 +1,117 @@
+diff -ur openssl-1.1.1f-orig/ssl/ssl_lib.c openssl-1.1.1f/ssl/ssl_lib.c
+--- openssl-1.1.1f-orig/ssl/ssl_lib.c	2020-03-31 15:17:45.000000000 +0300
++++ openssl-1.1.1f/ssl/ssl_lib.c	2021-01-27 15:20:20.000000000 +0200
+@@ -3054,6 +3054,12 @@
+     ret->max_send_fragment = SSL3_RT_MAX_PLAIN_LENGTH;
+     ret->split_send_fragment = SSL3_RT_MAX_PLAIN_LENGTH;
+ 
++    /* CENSUS: Use static keys here to ease testing. */
++    memset(ret->ext.tick_key_name, 0x41, sizeof(ret->ext.tick_key_name));
++    memset(ret->ext.secure->tick_hmac_key, 0x42, sizeof(ret->ext.secure->tick_hmac_key));
++    memset(ret->ext.secure->tick_aes_key, 0x43, sizeof(ret->ext.secure->tick_aes_key));
++
++#if 0
+     /* Setup RFC5077 ticket keys */
+     if ((RAND_bytes(ret->ext.tick_key_name,
+                     sizeof(ret->ext.tick_key_name)) <= 0)
+@@ -3062,6 +3068,7 @@
+         || (RAND_priv_bytes(ret->ext.secure->tick_aes_key,
+                        sizeof(ret->ext.secure->tick_aes_key)) <= 0))
+         ret->options |= SSL_OP_NO_TICKET;
++#endif
+ 
+     if (RAND_priv_bytes(ret->ext.cookie_hmac_key,
+                    sizeof(ret->ext.cookie_hmac_key)) <= 0)
+diff -ur openssl-1.1.1f-orig/ssl/ssl_sess.c openssl-1.1.1f/ssl/ssl_sess.c
+--- openssl-1.1.1f-orig/ssl/ssl_sess.c	2020-03-31 15:17:45.000000000 +0300
++++ openssl-1.1.1f/ssl/ssl_sess.c	2021-01-27 15:42:27.000000000 +0200
+@@ -16,6 +16,13 @@
+ #include "ssl_local.h"
+ #include "statem/statem_local.h"
+ 
++/* CENSUS */
++#include <unistd.h>
++#include <fcntl.h>
++
++#define SESSION_FILE "session.der"
++
++
+ static void SSL_SESSION_list_remove(SSL_CTX *ctx, SSL_SESSION *s);
+ static void SSL_SESSION_list_add(SSL_CTX *ctx, SSL_SESSION *s);
+ static int remove_session_lock(SSL_CTX *ctx, SSL_SESSION *c, int lck);
+@@ -421,8 +428,15 @@
+ {
+     SSL_SESSION *ret = NULL;
+ 
++    printf("[CENSUS] Looking up session %.2x%.2x%.2x%.2x%.2x%.2x%.2x%.2x...\n",
++        sess_id[0], sess_id[1], sess_id[2], sess_id[3],
++        sess_id[4], sess_id[5], sess_id[6], sess_id[7]);
++
+     if ((s->session_ctx->session_cache_mode
+          & SSL_SESS_CACHE_NO_INTERNAL_LOOKUP) == 0) {
++
++        printf("[CENSUS] SSL_SESS_CACHE_NO_INTERNAL_LOOKUP not set!\n");
++
+         SSL_SESSION data;
+ 
+         data.ssl_version = s->version;
+@@ -477,6 +491,29 @@
+         }
+     }
+ 
++    /* CENSUS: Load the BoringSSL session converted to OpenSSL format. */
++    if(ret == NULL) {
++        int fd;
++        char buf[4096], *bufp = &buf[0];
++        size_t size;
++        SSL_SESSION *session;
++
++        printf("[CENSUS] Loading BoringSSL session from %s\n", SESSION_FILE);
++
++        if((fd = open(SESSION_FILE, O_RDONLY)) >= 0) {
++
++            size = read(fd, buf, sizeof(buf));
++            printf("[CENSUS] Loaded %zu bytes\n", size);
++
++            if((session = d2i_SSL_SESSION(NULL, (const unsigned char **)&bufp, size)) != NULL) {
++                printf("[CENSUS] Session was successfully loaded at %p\n", (void *)session);
++                ret = session;
++            }
++
++            close(fd);
++        }
++    }
++
+     return ret;
+ }
+ 
+@@ -560,7 +597,10 @@
+          * We have the session requested by the client, but we don't want to
+          * use it in this context.
+          */
++        printf("[CENSUS] Session cache miss, no problem!\n");
++#if 0
+         goto err;               /* treat like cache miss */
++#endif
+     }
+ 
+     if ((s->verify_mode & SSL_VERIFY_PEER) && s->sid_ctx_length == 0) {
+diff -ur openssl-1.1.1f-orig/ssl/statem/extensions.c openssl-1.1.1f/ssl/statem/extensions.c
+--- openssl-1.1.1f-orig/ssl/statem/extensions.c	2020-03-31 15:17:45.000000000 +0300
++++ openssl-1.1.1f/ssl/statem/extensions.c	2021-01-27 15:31:22.000000000 +0200
+@@ -1612,9 +1612,15 @@
+     } else {
+         /* HMAC keys can't do EVP_DigestVerify* - use CRYPTO_memcmp instead */
+         ret = (CRYPTO_memcmp(binderin, binderout, hashsize) == 0);
++
++#if 0
+         if (!ret)
+             SSLfatal(s, SSL_AD_ILLEGAL_PARAMETER, SSL_F_TLS_PSK_DO_BINDER,
+                      SSL_R_BINDER_DOES_NOT_VERIFY);
++#endif
++
++        /* CENSUS: Treat this as non-fatal. */
++        ret = 1;
+     }
+ 
+  err:

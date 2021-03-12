@@ -1,0 +1,79 @@
+diff -ur openssl-1.1.1f-orig/ssl/ssl_lib.c openssl-1.1.1f/ssl/ssl_lib.c
+--- openssl-1.1.1f-orig/ssl/ssl_lib.c	2020-03-31 15:17:45.000000000 +0300
++++ openssl-1.1.1f/ssl/ssl_lib.c	2020-12-14 20:58:39.000000000 +0200
+@@ -3055,6 +3055,12 @@
+     ret->split_send_fragment = SSL3_RT_MAX_PLAIN_LENGTH;
+
+     /* Setup RFC5077 ticket keys */
++    /* CENSUS: Use static keys here to ease testing. */
++    memset(ret->ext.tick_key_name, 0x41, sizeof(ret->ext.tick_key_name));
++    memset(ret->ext.secure->tick_hmac_key, 0x42, sizeof(ret->ext.secure->tick_hmac_key));
++    memset(ret->ext.secure->tick_aes_key, 0x43, sizeof(ret->ext.secure->tick_aes_key));
++
++#if 0
+     if ((RAND_bytes(ret->ext.tick_key_name,
+                     sizeof(ret->ext.tick_key_name)) <= 0)
+         || (RAND_priv_bytes(ret->ext.secure->tick_hmac_key,
+@@ -3062,6 +3068,7 @@
+         || (RAND_priv_bytes(ret->ext.secure->tick_aes_key,
+                        sizeof(ret->ext.secure->tick_aes_key)) <= 0))
+         ret->options |= SSL_OP_NO_TICKET;
++#endif
+
+     if (RAND_priv_bytes(ret->ext.cookie_hmac_key,
+                    sizeof(ret->ext.cookie_hmac_key)) <= 0)
+diff -ur openssl-1.1.1f-orig/ssl/ssl_sess.c openssl-1.1.1f/ssl/ssl_sess.c
+--- openssl-1.1.1f-orig/ssl/ssl_sess.c	2020-03-31 15:17:45.000000000 +0300
++++ openssl-1.1.1f/ssl/ssl_sess.c	2021-03-12 14:28:38.000000000 +0200
+@@ -521,8 +521,11 @@
+
+         ret = s->session;
+     } else {
+-        /* sets s->ext.ticket_expected */
+-        r = tls_get_ticket_from_client(s, hello, &ret);
++        /* CENSUS: Let OpenSSL know that TLS ticket decryption was successful,
++         * but do not actually decrypt it. We don't have the server keys anyway.
++         */
++        /* r = tls_get_ticket_from_client(s, hello, &ret); */
++        r = SSL_TICKET_SUCCESS;
+         switch (r) {
+         case SSL_TICKET_FATAL_ERR_MALLOC:
+         case SSL_TICKET_FATAL_ERR_OTHER:
+diff -ur openssl-1.1.1f-orig/ssl/statem/extensions.c openssl-1.1.1f/ssl/statem/extensions.c
+--- openssl-1.1.1f-orig/ssl/statem/extensions.c	2020-03-31 15:17:45.000000000 +0300
++++ openssl-1.1.1f/ssl/statem/extensions.c	2021-03-12 14:14:43.000000000 +0200
+@@ -1612,9 +1612,14 @@
+     } else {
+         /* HMAC keys can't do EVP_DigestVerify* - use CRYPTO_memcmp instead */
+         ret = (CRYPTO_memcmp(binderin, binderout, hashsize) == 0);
++#if 0
+         if (!ret)
+             SSLfatal(s, SSL_AD_ILLEGAL_PARAMETER, SSL_F_TLS_PSK_DO_BINDER,
+                      SSL_R_BINDER_DOES_NOT_VERIFY);
++#endif
++        /* CENSUS: Do not care if the binders do not match! */
++        printf("Ignoring PSK binders!\n");
++        ret = 1;
+     }
+
+  err:
+diff -ur openssl-1.1.1f-orig/ssl/statem/extensions_srvr.c openssl-1.1.1f/ssl/statem/extensions_srvr.c
+--- openssl-1.1.1f-orig/ssl/statem/extensions_srvr.c	2020-03-31 15:17:45.000000000 +0300
++++ openssl-1.1.1f/ssl/statem/extensions_srvr.c	2021-03-12 14:28:12.000000000 +0200
+@@ -1092,9 +1092,16 @@
+         }
+
+ #ifndef OPENSSL_NO_PSK
++#if 0
+         if(sess == NULL
+                 && s->psk_server_callback != NULL
+                 && idlen <= PSK_MAX_IDENTITY_LEN) {
++#endif
++        /* CENSUS: This took some time to debug. The PSK identity sent from the
++         * remote client might actually be larger than PSK_MAX_IDENTITY_LEN.
++         */
++        if(sess == NULL
++                && s->psk_server_callback != NULL) {
+             char *pskid = NULL;
+             unsigned char pskdata[PSK_MAX_PSK_LEN];
+             unsigned int pskdatalen;
