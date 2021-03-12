@@ -180,7 +180,11 @@ start_server()
         #
         # In any case, we also set LD_LIBRARY_PATH and hope for the best.
         #
-        LD_LIBRARY_PATH="$OPENSSL_SRC" \
+        if [ "$(uname)" = "Darwin" ]; then
+            export DYLD_LIBRARY_PATH="$OPENSSL_SRC"
+        else
+            export LD_LIBRARY_PATH="$OPENSSL_SRC"
+        fi
         sudo -sE "$OPENSSL_SRC/apps/openssl" s_server \
             -tls1_2 \
             -port 443 \
@@ -228,7 +232,7 @@ main()
     create_files
 
     #
-    # Start the MitM OpenSS server.
+    # Start the MitM OpenSSL server.
     #
     start_server
 }
