@@ -10,7 +10,7 @@ our blog post.
 In the following we assume environment variable `$POC` points to the root
 directory of this repository.
 
-Prepare OpenSSL 1.1.1f source code for TLS v1.2 MitM:
+Download OpenSSL 1.1.1f source code, apply TLS v1.2 MitM patch and compile:
 
     cd /tmp
     curl -O https://ftp.openssl.org/source/old/1.1.1/openssl-1.1.1f.tar.gz
@@ -21,8 +21,7 @@ Prepare OpenSSL 1.1.1f source code for TLS v1.2 MitM:
     ./config -d no-shared
     make -j8
 
-Prepare BoringSSL source code (commit **2e5f38a1d871305ffeb0c932d421b01fd43a4168**)
-for TLS v1.2 MitM:
+Compile BoringSSL (commit **2e5f38a1d871305ffeb0c932d421b01fd43a4168**):
 
     cd /tmp
     git clone https://boringssl.googlesource.com/boringssl
@@ -99,6 +98,8 @@ DER format, so that it can be used by OpenSSL's `s_server`.
     ME9WKyyBO0KeNc3QhXQYTZpqg9ay0ceGUhwuSfmijm6ZakzxcSJeNT9g+3GhDW/4
     6KEGAgRgEX/0ogQCAgEwpAIEAK0DAgEB
     -----END SSL SESSION PARAMETERS-----
+
+The resulting DER file, **session.der**, can be found in the current directory.
 
 Last but not least, run the following script to start the MitM server:
 

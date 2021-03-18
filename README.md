@@ -38,7 +38,7 @@ The structure of this repository is as follows:
 
 To test the PoC you need an Android device running WhatsApp 2.20.206.22 [04].
 Even though our code was initially developed for 2.19.355, and so you can find
-the corresponding snippets under **frida_scripts/**, that version it is nowadays
+the corresponding snippets under **frida_scripts/**, that version is nowadays
 considered "expired" and won't work.
 
 Before firing up the PoC, it is a good idea to compile as little as possible of

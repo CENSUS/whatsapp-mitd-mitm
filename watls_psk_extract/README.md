@@ -9,7 +9,7 @@ MitM against WhatsApp.
 In the following we assume environment variable `$POC` points to the root
 directory of this repository.
 
-Prepare OpenSSL 1.1.1f source code for TLS v1.3 MitM:
+Download OpenSSL 1.1.1f source code, apply TLS v1.3 MitM patch and compile:
 
     cd /tmp
     curl -O https://ftp.openssl.org/source/old/1.1.1/openssl-1.1.1f.tar.gz
@@ -47,8 +47,8 @@ location of the Java compiler and call `make`:
 
 To deploy the application on an Android device:
 
-    # Required only if you multiple devices attached on your computer
-    export ANDROID_SERIAL=123456789abcdef
+    # Required only if you have multiple devices attached on your computer
+    export ANDROID_SERIAL=0123456789abcdef
 
     make deploy
 
