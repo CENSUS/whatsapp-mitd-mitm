@@ -8,6 +8,6 @@
 
 mv libwhatsapp.so AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA.so
 zip - AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA.so | \
-    sed s/AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA.so/..\\/..\\/..\\/files\\/decompressed\\/libs.spk.zst\\/libwhatsapp.so/g > payload.zip
+    LC_ALL=C sed s/AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA.so/..\\/..\\/..\\/files\\/decompressed\\/libs.spk.zst\\/libwhatsapp.so/g > payload.zip
 mv AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA.so libwhatsapp.so
 
