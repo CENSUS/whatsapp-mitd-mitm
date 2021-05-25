@@ -101,7 +101,7 @@ at the demonstration videos.
 
 ## References
 
-[01] <https://census-labs.com/news/2021/03/07/whatsapp-mitd-remote-exploitation-CVE-2021-24027/>
+[01] <https://www.census-labs.com/news/2021/04/14/whatsapp-mitd-remote-exploitation-CVE-2021-24027/>
 
 [02] <https://cve.mitre.org/cgi-bin/cvename.cgi?name=CVE-2020-6516>
 
